@@ -1,0 +1,41 @@
+{
+  "name": "demux-eos-state-history",
+  "version": "1.0.0",
+  "description": "Action Reader for EOS State History Plugin",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "rm -rf dist/* && tsc",
+    "lint": "tslint -c tslint.json -p tsconfig.json --fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simplex-software/demux-js-eos-state-history.git"
+  },
+  "keywords": [
+    "demux",
+    "eos",
+    "websocket"
+  ],
+  "author": "Simplex Software",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/simplex-software/demux-js-eos-state-history/issues"
+  },
+  "homepage": "https://github.com/simplex-software/demux-js-eos-state-history#readme",
+  "devDependencies": {
+    "@types/bunyan": "^1.8.6",
+    "@types/node-fetch": "^2.3.0"
+  },
+  "dependencies": {
+    "@types/ws": "^6.0.1",
+    "@types/express": "^4.16.1",
+    "@blockone/tslint-config-blockone": "^3.1.0",
+    "demux": "^4.0.0",
+    "eosjs": "^20.0.0",
+    "node-fetch": "^2.3.0",
+    "tslint": "^5.15.0",
+    "tslint-eslint-rules": "^5.4.0",
+    "ws": "^6.2.1"
+  }
+}
