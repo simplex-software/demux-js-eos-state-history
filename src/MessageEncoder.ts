@@ -2,31 +2,8 @@ import zlib from 'zlib'
 import { Serialize, JsonRpc, Api } from 'eosjs'
 import { TextEncoder, TextDecoder } from 'util'
 import { JsSignatureProvider } from 'eosjs/dist/eosjs-jssig'
-import { Action, Block } from 'demux'
 import fetch from 'node-fetch'
-
-export interface StateHistoryInfo {
-  head: number
-  lastIrreversible: number
-}
-
-export interface StateHistoryActionPayload {
-  actionIndex: number
-  transactionId: string
-  account: string
-  name: string
-  authorization: any[]
-  data: string
-  producer: string
-}
-
-export interface StateHistoryAction extends Action {
-  payload: StateHistoryActionPayload
-}
-
-export interface StateHistoryBlock extends Block {
-  actions: StateHistoryAction[]
-}
+import { StateHistoryInfo, StateHistoryBlock, StateHistoryAction } from '../interfaces'
 
 // Wrapper to deal with differences between the definitions of fetch for the browser built-in
 // and the node-fetch polyfill for node
@@ -36,14 +13,14 @@ const fetchWrapper = (input?: string | Request, init?: RequestInit): Promise<Res
   return fetch(anyInput, anyInit) as any
 }
 
-export class StateHistoryMessageEncoder {
-  private types: Map<string, Serialize.Type>
+export class MessageEncoder {
+  private types: Map<string, Serialize.Type> = new Map()
   private textEncoder: any = new TextEncoder()
   private textDecoder: any = new TextDecoder()
   private api: Api
+  private initialized: boolean = false
 
-  constructor(abi: string, nodeosEndpoint: string) {
-    this.types = Serialize.getTypesFromAbi(Serialize.createInitialTypes(), JSON.parse(abi))
+  constructor(nodeosEndpoint: string) {
     const signatureProvider = new JsSignatureProvider([])
 
     const rpc = new JsonRpc(nodeosEndpoint, { fetch: fetchWrapper } )
@@ -55,13 +32,28 @@ export class StateHistoryMessageEncoder {
     })
   }
 
-  public getStatusRequest() {
-    const buffer = this.newBuffer()
-    Serialize.getType(this.types, 'request').serialize(buffer, ['get_status_request_v0', {}])
-    return buffer
+  public isInitialized() {
+    return this.initialized
   }
 
-  public getBlocksRequest(startBlockNum: number, endBlockNum: number) {
+  public setupAbi(abi: string) {
+    this.types = Serialize.getTypesFromAbi(Serialize.createInitialTypes(), JSON.parse(abi))
+    this.initialized = true
+  }
+
+  public getStatusRequest(): Uint8Array {
+    if (!this.initialized) {
+      throw new Error('MessageEncoder was not initialized')
+    }
+    const buffer = this.newBuffer()
+    Serialize.getType(this.types, 'request').serialize(buffer, ['get_status_request_v0', {}])
+    return buffer.asUint8Array()
+  }
+
+  public getBlocksRequest(startBlockNum: number, endBlockNum: number): Uint8Array {
+    if (!this.initialized) {
+      throw new Error('MessageEncoder was not initialized')
+    }
     const buffer = this.newBuffer()
     Serialize.getType(this.types, 'request').serialize(buffer, ['get_blocks_request_v0', {
       start_block_num: startBlockNum,
@@ -72,13 +64,17 @@ export class StateHistoryMessageEncoder {
       max_messages_in_flight: endBlockNum - startBlockNum,
       have_positions: [],
       irreversible_only: false}])
-    return buffer
+    return buffer.asUint8Array()
   }
 
   public async parseResult(rawResult: ArrayBuffer): Promise<StateHistoryInfo | StateHistoryBlock> {
+    if (!this.initialized) {
+      throw new Error('MessageEncoder was not initialized')
+    }
     const buffer = this.newBuffer()
     buffer.pushArray(new Uint8Array(rawResult))
     const parsedResult = Serialize.getType(this.types, 'result').deserialize(buffer)
+
     switch (parsedResult[0]) {
     case 'get_status_result_v0':
       return {
