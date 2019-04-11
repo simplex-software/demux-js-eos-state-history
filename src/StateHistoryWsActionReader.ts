@@ -1,14 +1,16 @@
 import { AbstractActionReader, NotInitializedError } from 'demux'
-import { StateHistoryWsActionReaderOptions } from '../interfaces'
-import { StateHistoryWebsocketConnection } from './StateHistoryWebsocketConnection'
-import { StateHistoryBlock } from './StateHistoryMessageEncoder'
+import { StateHistoryWsActionReaderOptions, StateHistoryBlock } from '../interfaces'
+import { StateHistoryPlugin } from './StateHistoryPlugin'
+import { WebsocketWrapper } from './WebsocketWrapper'
+import { MessageEncoder } from './MessageEncoder'
 
 export class StateHistoryWsActionReader extends AbstractActionReader {
-  private websocketConnection: StateHistoryWebsocketConnection
+  private websocketConnection: StateHistoryPlugin
 
   constructor(options: StateHistoryWsActionReaderOptions) {
     super(options)
-    this.websocketConnection = new StateHistoryWebsocketConnection(options.nodeosWSEndpoint, options.nodeosRPCEndpoint)
+    const messageEncoder = new MessageEncoder(options.nodeosRPCEndpoint)
+    this.websocketConnection = new StateHistoryPlugin(new WebsocketWrapper(), options.nodeosWSEndpoint, messageEncoder)
   }
 
   public async getHeadBlockNumber(): Promise<number> {
