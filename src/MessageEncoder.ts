@@ -97,23 +97,38 @@ export class MessageEncoder {
 
     if (result.traces) {
       result.traces = await this.inflateTraces(result.traces)
-      const actionPromises: Array<Promise<StateHistoryAction>> = []
+      const actionPromises: Array<Promise<StateHistoryAction[]>> = []
       result.traces.forEach((transactionTrace: any) => {
         let index = 0
         actionPromises.push(... transactionTrace.action_traces.map(async ([, actionTrace]: [any, any]) => {
-          const [deserializedAction] = await this.api.deserializeActions([actionTrace.act])
-          return {
-            type: `${actionTrace.act.account}::${actionTrace.act.name}`,
-            payload: {
-              actionIndex: index ++,
-              transactionId: transactionTrace.id,
-              producer: result.block.producer,
-              ... deserializedAction
-            }
+          let deserializedActions: any[]
+          let actions = actionTrace.inline_traces.map((inline_trace: any) => {
+            return inline_trace[1].act
+          })
+          actions.unshift(actionTrace.act)
+          try {
+            deserializedActions = await this.api.deserializeActions(actions)
+          }catch(e){
+            // If transaction data cannot be deserialized we send the raw data instead
+            deserializedActions = actions
           }
+          return deserializedActions.map((deserializedAction: any) => {
+            return {
+              type: `${actionTrace.act.account}::${actionTrace.act.name}`,
+              payload: {
+                actionIndex: index ++,
+                transactionId: transactionTrace.id,
+                producer: result.block.producer,
+                ... deserializedAction
+              }
+            }
+          })
         }))
       })
-      actions = await Promise.all(actionPromises)
+      const actionArrays: StateHistoryAction[][] = await Promise.all(actionPromises)
+      actions = actionArrays.reduce((previous: StateHistoryAction[], current: StateHistoryAction[]) : StateHistoryAction[] => {
+        return previous.concat(current)
+      }, [])
     }
 
     return {
