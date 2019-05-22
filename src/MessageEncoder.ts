@@ -134,8 +134,8 @@ export class MessageEncoder {
     return {
       blockInfo: {
         blockNumber: result.this_block.block_num,
-        blockHash: result.this_block.block_id,
-        previousBlockHash: result.block.previous,
+        blockHash: result.this_block.block_id.toLowerCase(),
+        previousBlockHash: result.block.previous.toLowerCase(),
         timestamp: result.block.timestamp
       },
       actions
