@@ -102,15 +102,15 @@ export class MessageEncoder {
         let index = 0
         actionPromises.push(... transactionTrace.action_traces.map(async ([, actionTrace]: [any, any]) => {
           let deserializedActions: any[]
-          let actions = actionTrace.inline_traces.map((inline_trace: any) => {
-            return inline_trace[1].act
+          const txActions = actionTrace.inline_traces.map((inlineTrace: any) => {
+            return inlineTrace[1].act
           })
-          actions.unshift(actionTrace.act)
+          txActions.unshift(actionTrace.act)
           try {
-            deserializedActions = await this.api.deserializeActions(actions)
-          }catch(e){
+            deserializedActions = await this.api.deserializeActions(txActions)
+          } catch (e) {
             // If transaction data cannot be deserialized we send the raw data instead
-            deserializedActions = actions
+            deserializedActions = txActions
           }
           return deserializedActions.map((deserializedAction: any) => {
             return {
@@ -126,7 +126,10 @@ export class MessageEncoder {
         }))
       })
       const actionArrays: StateHistoryAction[][] = await Promise.all(actionPromises)
-      actions = actionArrays.reduce((previous: StateHistoryAction[], current: StateHistoryAction[]) : StateHistoryAction[] => {
+      actions = actionArrays.reduce((
+        previous: StateHistoryAction[],
+        current: StateHistoryAction[]):
+        StateHistoryAction[] => {
         return previous.concat(current)
       }, [])
     }

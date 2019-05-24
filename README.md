@@ -1,4 +1,4 @@
-# demux-js-eos-state-history
+# demux-js-eos-state-history [![Build Status](https://travis-ci.org/simplex-software/demux-js-eos-state-history.svg?branch=master)](https://travis-ci.org/simplex-software/demux-js-eos-state-history)
 Demux Action Reader implementation to read block and action data from EOS State History.
 
 ## Installation
