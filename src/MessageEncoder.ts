@@ -1,4 +1,3 @@
-import zlib from 'zlib'
 import { Serialize, JsonRpc, Api } from 'eosjs'
 import { TextEncoder, TextDecoder } from 'util'
 import { JsSignatureProvider } from 'eosjs/dist/eosjs-jssig'
@@ -102,10 +101,7 @@ export class MessageEncoder {
         let index = 0
         actionPromises.push(... transactionTrace.action_traces.map(async ([, actionTrace]: [any, any]) => {
           let deserializedActions: any[]
-          const txActions = actionTrace.inline_traces.map((inlineTrace: any) => {
-            return inlineTrace[1].act
-          })
-          txActions.unshift(actionTrace.act)
+          const txActions = [actionTrace.act]
           try {
             deserializedActions = await this.api.deserializeActions(txActions)
           } catch (e) {
@@ -153,7 +149,7 @@ export class MessageEncoder {
 
   private async inflateTraces(rawTraces: any) {
     const traces = []
-    rawTraces = await this.inflate(rawTraces)
+    rawTraces = Buffer.from(rawTraces, 'hex')
     const buffer = this.newBuffer()
     buffer.pushArray(new Uint8Array(rawTraces))
     const tracesCount = buffer.getVaruint32()
@@ -162,18 +158,6 @@ export class MessageEncoder {
       traces.push(trace)
     }
     return traces
-  }
-
-  private inflate(hexData: string) {
-    return new Promise((resolve, reject) => {
-      zlib.inflate(Buffer.from(hexData, 'hex'), (err, result) => {
-        if (!err) {
-          resolve(result)
-        } else {
-          reject(err)
-        }
-      })
-    })
   }
 
   private newBuffer() {
