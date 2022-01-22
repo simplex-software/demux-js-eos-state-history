@@ -42,7 +42,7 @@
     "@blockone/tslint-config-blockone": "^3.1.0",
     "demux": "^4.0.0",
     "eosjs": "^20.0.0",
-    "node-fetch": "^2.3.0",
+    "node-fetch": "^3.1.1",
     "tslint": "^5.15.0",
     "tslint-eslint-rules": "^5.4.0",
     "ws": "^6.2.1"
